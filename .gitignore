@@ -1,0 +1,17 @@
+
+node_modules/
+bun.lockb
+dist/
+*.log
+.DS_Store
+
+.vscode/*
+!.vscode/settings.json  # 任意で残したい場合
+
+.env
+.env.prod
+
+src/db/*.ts
+
+**/tmp/
+**/.docker
