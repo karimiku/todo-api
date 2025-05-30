@@ -1,45 +1,82 @@
+// src/routes/auth.ts
 import { Hono } from "hono";
-import { getUserByEmail, createUser } from "../db/users_sql";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import { sign } from "hono/jwt";
 import type mysql from "mysql2/promise";
+import { getUserByEmail, createUser } from "../db/users_sql";
 
-type Variables = { db: mysql.Connection };
+type Variables = { db: mysql.Pool };
 type Env = { Variables: Variables };
 
 export const authRoutes = new Hono<Env>();
 
+const isStrongPassword = (password: string) => {
+  const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  return pattern.test(password);
+};
+
 authRoutes.post("/signup", async (c) => {
-  const { email, pw } = await c.req.json();
-  console.log(email, pw);
-  const db = c.get("db");
+  try {
+    const raw = await c.req.text();
+    const { email, password } = JSON.parse(raw); // 👈 確実
 
-  const exists = await getUserByEmail(db, { email });
-  if (exists) return c.json({ error: "既に登録済み" }, 400);
+    // 🔒 不正な入力チェック（undefinedや空文字）
+    if (!email || !password) {
+      return c.json(
+        { error: "メールアドレスとパスワードを入力してください。" },
+        400
+      );
+    }
 
-  const password = await bcrypt.hash(pw, 10);
+    // 🔒 パスワードの強度チェック
+    if (!isStrongPassword(password)) {
+      return c.json(
+        {
+          error:
+            "パスワードは8文字以上で、大文字・小文字・数字をすべて含めてください。",
+        },
+        400
+      );
+    }
 
-  await createUser(db, { id: uuidv4(), email, password });
+    const db = c.get("db");
 
-  return c.text("ユーザー登録完了", 201);
+    // 🔒 既存ユーザーの確認
+    const existingUser = await getUserByEmail(db, { email }).catch(() => null);
+    if (existingUser) {
+      return c.json({ error: "既に登録済みのメールアドレスです。" }, 400);
+    }
+
+    // 🔐 パスワードをハッシュ化して保存
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await createUser(db, {
+      id: uuidv4(),
+      email,
+      password: hashedPassword,
+    });
+
+    return c.text("ユーザー登録完了", 201);
+  } catch (err) {
+    console.error("[POST /auth/signup] エラー:", err);
+    return c.text("Internal Server Error", 500);
+  }
 });
 
 authRoutes.post("/login", async (c) => {
-  const { email, pw } = await c.req.json();
+  const { email, password } = await c.req.json();
   const db = c.get("db");
 
-  const user = await getUserByEmail(db, { email });
-  if (!user) return c.json({ error: "存在しないユーザー" }, 401);
+  const user = await getUserByEmail(db, { email }).catch(() => null);
+  if (!user) {
+    return c.json({ error: "存在しないユーザーです。" }, 401);
+  }
 
-  const valid = await bcrypt.compare(pw, user.password);
-  if (!valid) return c.json({ error: "パスワード不一致" }, 401);
+  const passwordValid = await bcrypt.compare(password, user.password);
+  if (!passwordValid) {
+    return c.json({ error: "パスワードが間違っています。" }, 401);
+  }
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    process.env.JWT_SECRET!,
-    { expiresIn: "1h" }
-  );
-
+  const token = await sign({ userId: user.id }, process.env.JWT_SECRET!);
   return c.json({ token });
 });

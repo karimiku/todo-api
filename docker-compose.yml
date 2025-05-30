@@ -6,7 +6,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: todo_app
-      MYSQL_USER: user
+      MYSQL_USER: todo_user
       MYSQL_PASSWORD: password
     ports:
       - "3306:3306"

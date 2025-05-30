@@ -1,8 +1,14 @@
 {
   "compilerOptions": {
-    "strict": true,
+    "target": "ES2020",
+    "module": "ESNext", // ✅ ESM にする
+    "moduleResolution": "Node", // ✅ Node.js のモジュール解決に
     "esModuleInterop": true,
+    "strict": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "jsxImportSource": "hono/jsx",
+    "types": ["node"], // ✅ Nodeの型を補完
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   }
 }

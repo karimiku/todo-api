@@ -8,11 +8,10 @@ bun.lockb
 .DS_Store
 .vscode
 
-.env
+
 .env.*
 
 *.log
 tmp/
 *.tmp
 
-src/db/*.ts
