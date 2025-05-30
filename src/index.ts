@@ -1,7 +1,6 @@
 // src/index.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import dotenv from "dotenv";
 import mysql from "mysql2/promise";
 
 import { authRoutes } from "./routes/auth";

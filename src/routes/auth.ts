@@ -19,9 +19,8 @@ const isStrongPassword = (password: string) => {
 authRoutes.post("/signup", async (c) => {
   try {
     const raw = await c.req.text();
-    const { email, password } = JSON.parse(raw); // 👈 確実
+    const { email, password } = JSON.parse(raw);
 
-    // 🔒 不正な入力チェック（undefinedや空文字）
     if (!email || !password) {
       return c.json(
         { error: "メールアドレスとパスワードを入力してください。" },
@@ -29,7 +28,6 @@ authRoutes.post("/signup", async (c) => {
       );
     }
 
-    // 🔒 パスワードの強度チェック
     if (!isStrongPassword(password)) {
       return c.json(
         {
@@ -42,13 +40,11 @@ authRoutes.post("/signup", async (c) => {
 
     const db = c.get("db");
 
-    // 🔒 既存ユーザーの確認
     const existingUser = await getUserByEmail(db, { email }).catch(() => null);
     if (existingUser) {
       return c.json({ error: "既に登録済みのメールアドレスです。" }, 400);
     }
 
-    // 🔐 パスワードをハッシュ化して保存
     const hashedPassword = await bcrypt.hash(password, 10);
     await createUser(db, {
       id: uuidv4(),
