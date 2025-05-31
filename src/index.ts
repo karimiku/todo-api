@@ -7,6 +7,8 @@ import { authRoutes } from "./routes/auth";
 import { todoRoutes } from "./routes/todos";
 import { authMiddleware } from "./middlewares/authMiddleware";
 
+import "dotenv/config";
+
 type Variables = { db: mysql.Pool };
 type Env = { Variables: Variables };
 
