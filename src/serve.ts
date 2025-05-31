@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import app from "./index";
 
+app.get("/healthz", (c) => c.text("OK", 200));
 const port = Number(process.env.PORT) || 3000;
 
 serve({
